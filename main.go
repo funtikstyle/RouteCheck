@@ -1,21 +1,14 @@
 package main
 
 import (
-	"RouteCheck/service"
+	"RouteCheck/routeService"
 	"encoding/csv"
-	"fmt"
 	"io"
 	"log"
 	"os"
-	"time"
-	"sync"
 )
 
-// type Data struct {
-// 	route  string
-// 	status string
-// 	time   string
-// }
+
 
 func main() {
 	file, err := os.Open("routes.csv")
@@ -30,19 +23,25 @@ func main() {
 		}
 	}(file)
 
-	var wg sync.WaitGroup
+	// var wg sync.WaitGroup
 
-	// sum, err := service.GetMD5SumString(file)
+	// sum, err := service.GetMD5SumFile(file)
 	// if err != nil {
 	// 	log.Println(err)
 	// }
 	// log.Println(sum)
 
 	r := csv.NewReader(file)
+	// records, _ := r.ReadAll()
+	// fmt.Println(records)
+
+	// reply := service.GetListDomainWithSelectionRoutes(records)
+	// fmt.Println(reply)
 
 	for {
-		records, err := r.Read()
-		log.Println(records)
+		record, err := r.Read()
+
+		log.Println(record)
 		if err == io.EOF {
 			break
 		}
@@ -50,27 +49,35 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		}
+		routeService.AddRouteToMap(record)
+		// reply := routeService.AddRouteToMap(record)
+		// fmt.Println(reply)
 
-		for key := range records {
-			wg.Add(1)
-
-			go func(key int, records []string){
-			route := records[key]
-			response := service.SendRequest(route)
-
-			if response > 300 || response < 200 {
-				 service.LogFailRoute(route, response)
-			}
-
-			timeNow := time.Now().String()
-			fmt.Printf("%s %s %s\n", records[key], response, timeNow)
-			
-			wg.Done()
-		}(key, records)
-		
 	}
-	}
-	 wg.Wait()
+
+	routeService.RouteCheckingWG()
+	
+	// fmt.Println("-------------------------------------------------------------------------------")
+	// routeService.RouteChecking()
+
+	// for key := range record {
+	// 	wg.Add(1)
+
+	// 	go func(key int, record []string) {
+	// 		route := record[key]
+	// 		response := service.SendRequest(route)
+
+	// 		if response > 300 || response < 200 {
+	// 			service.LogFailRoute(route, response)
+	// 		}
+
+	// 		timeNow := time.Now().String()
+
+	// 		fmt.Printf("%s %s %s\n", record[key], response, timeNow)
+
+	// 		wg.Done()
+	// 	}(key, record)
+
+	// }
+	// wg.Wait()
 }
-
-
